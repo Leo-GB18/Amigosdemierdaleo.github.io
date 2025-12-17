@@ -1,0 +1,381 @@
+<!<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amigos de Mierda - Virtual</title>
+    <style>
+        /* IMPORTAR FUENTE ESTILO IMPACT/CONDENSED */
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+
+        :root {
+            --bg-color: #f0f0f0;
+            --card-black: #111;
+            --card-pink: #e91e63;
+            --text-white: #fff;
+            --font-main: 'Oswald', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* UI CONTROLS */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        button {
+            background: var(--card-black);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-family: var(--font-main);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.mode-toggle {
+            background: var(--card-pink);
+        }
+
+        /* ESCENARIO DE CARTAS */
+        .scene {
+            width: 300px;
+            height: 420px;
+            perspective: 1000px;
+            position: relative;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .card.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* CARAS DE LA CARTA */
+        .card__face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            border: 1px solid #000;
+        }
+
+        /* DORSO (LOGO) */
+        .card__face--back {
+            background: var(--card-black);
+            color: white;
+            flex-direction: column;
+            transform: rotateY(0deg); /* Estado inicial: Boca abajo */
+            border: 8px solid white; 
+            outline: 1px solid black;
+        }
+
+        /* FRENTE (PREGUNTA) */
+        .card__face--front {
+            background: white;
+            color: black;
+            transform: rotateY(180deg);
+            text-align: left; /* Las cartas originales tienen texto alineado a la izquierda/justificado */
+            border-top: 20px solid var(--card-black); /* Borde estilo "cinta" superior */
+            border-bottom: 20px solid var(--card-black);
+            display: flex;
+            align-items: center;
+        }
+
+        /* ESTILO MODO ROSA */
+        body.pink-mode .card__face--back {
+            background: var(--card-pink);
+        }
+        body.pink-mode .card__face--front {
+            border-color: var(--card-pink);
+        }
+
+        /* TIPOGRAFÍA DE LA CARTA */
+        .question-text {
+            font-size: 1.8rem;
+            line-height: 1.2;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* LOGO CON CSS PURO */
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 0.8;
+        }
+        .logo-top {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+        .logo-middle {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .logo-de {
+            font-size: 1.2rem;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            margin-right: 5px;
+            font-weight: 500;
+        }
+        .logo-bottom {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        /* TEXTURAS SUCIAS (GRUNGE) */
+        .grunge-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* ANIMACIÓN DE ENTRADA */
+        @keyframes slideIn {
+            from { transform: translateX(100vw) rotateY(180deg); }
+            to { transform: translateX(0) rotateY(180deg); }
+        }
+        
+        .animate-in {
+            animation: slideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="scene">
+        <div class="card" id="card" onclick="flipCard()">
+            <!-- DORSO (LOGO) -->
+            <div class="card__face card__face--back">
+                <div class="logo-container">
+                    <div class="logo-top">AMIGOS</div>
+                    <div class="logo-middle">
+                        <div class="logo-de">DE</div>
+                        <div class="logo-bottom">MIERDA</div>
+                    </div>
+                </div>
+                <div class="grunge-overlay"></div>
+            </div>
+
+            <!-- FRENTE (PREGUNTA) -->
+            <div class="card__face card__face--front">
+                <div class="grunge-overlay"></div>
+                <p class="question-text" id="question">Presiona "Sacar Carta" para empezar.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="drawCard()">Sacar Carta</button>
+        <button class="mode-toggle" onclick="toggleMode()">Modo 🔥</button>
+    </div>
+
+    <script>
+        // BASE DE DATOS DE PREGUNTAS (Transcritas de tus imágenes)
+        const questionsBlack = [
+            "¿Quién se pide lo más caro de la carta y se hace el boludo para dividir la cuenta entre todos?",
+            "Uno de nosotros se hace el boludo, pero está secretamente resentido por el resultado de otra tarjeta. ¿Quién?",
+            "Atropellamos a alguien. ¿Quién propone echarse a la fuga?",
+            "En todo grupo de amigos hay alguien que se viste para el ojete. En el nuestro es...",
+            "¿Quién de nosotros es secretamente un supervillano?",
+            "¿Quién de nosotros es en realidad un robot?",
+            "¿Quién de nosotros pide plata prestada sabiendo que nunca la va a devolver?",
+            "Jamás tocaría la ropa interior de...",
+            "Nos eligen senadores a todos. ¿Quién hace más guita cobrando coimas?",
+            "¿Quién se va a casar con alguien que todavía no nació?",
+            "¿Quién mea en la pileta?",
+            "¿Quién tiene más chances de ir a la cárcel por un crimen que no cometió?",
+            "Ganamos la lotería y dividimos el premio entre todos. ¿Quién es el primero en perder todo lo que ganó?",
+            "A partir de este año van a entregar un Nobel a la falta de aseo personal. ¿Quién de nosotros va a ser nominado seguro?",
+            "Viajamos todos a las Vegas. ¿Quién vuelve casado?",
+            "Uno de nosotros hace 10 años tenía un futuro muy prometedor. ¿Quién?",
+            "Somos todos cómplices de un crimen y nos están interrogando. ¿Quién es el primero en quebrar y confesar?",
+            "A uno de nosotros le encuentran una colección de chicles masticados por sus ex. ¿A quién?",
+            "Si nos hiciéramos mafiosos, ¿quién sería el capo?",
+            "Uno de nosotros admira secretamente a Hitler. ¿Quién?",
+            "Somos los protagonistas de un thriller de suspenso. Al final, ¿quién es el asesino?",
+            "Un amigo en común necesita con urgencia dadores de sangre. ¿Quién dice que fue y no fue?",
+            "Llegó el apocalipsis Zombie. ¿Quién muere primero?",
+            "¿Con quién te harías el dormido para no tener que escucharlo hablar en un viaje muy largo?",
+            "¿A quién no querrías jamás como jefe?",
+            "Uno de nosotros está envejeciendo peor que los demás. ¿Quién?",
+            "En el futuro cercano, uno de nosotros va a morir víctima de un ajuste de cuentas. ¿Quién?",
+            "Uno de nosotros tiene el fetiche de comer caca. ¿Quién?",
+            "Uno de nosotros debutó a los 11. ¿Quién?",
+            "Nos invitan a comer a la mesa de la Señora. ¿Quién discute a los gritos con ella?",
+            "¿Quién quisiera que nunca adopte un hijo tuyo?",
+            "Todos tenemos nuestras cosas, pero uno de nosotros es realmente inmaduro para su edad. ¿Quién?",
+            "¿Quién se considera mucho más inteligente de lo que en verdad es?",
+            "Si todos nos dedicáramos a vivir del stand up, ¿quién se muere de hambre primero?",
+            "Vuelve la colimba. ¿Quién se pega un tiro en el pie para no hacerla?",
+            "Tenés que pegarle una trompada en la cara a uno de nosotros. ¿A quién?",
+            "¿Quién de nosotros se cree mejor que todos los demás?",
+            "De un día para el otro, el mundo se queda sin internet. ¿Quién se mata primero?",
+            "Somos los biólogos más capaces del planeta. ¿Quién inventa un virus para después vender la cura?",
+            "Estás en una situación complicada. ¿A quién no le pedís consejo?",
+            "¿Quién de nosotros odia su vida?",
+            "¿Quién de nosotros cree que la Tierra es plana?",
+            "¿A quién de nosotros no te animarías a hacer enojar?",
+            "¿Quién lee la Biblia?",
+            "Vamos a jugar a un juego nuevo. ¿Quién tarda más en entender las reglas?",
+            "Alquilamos una casa en la costa y está todo listo. ¿Quién se baja a último momento?",
+            "Uno de nosotros tiene un hijo no reconocido. ¿Quién?",
+            "Uno de nosotros tiene una doble vida. ¿Quién?",
+            "¡Nos acabamos de enterar de un secreto tremendo! ¿Quién es el primero en contarlo?",
+            "Trabajamos en una cadena de comida rápida. ¿Quién escupe en la comida?",
+            "El día que la ciencia descubra cómo agregarnos otro set de genitales, ¿quién es el primero en la fila?",
+            "Todos tenemos un equipo a cargo, ¿quién maltrata más a sus empleados?",
+            "Uno de nosotros, secretamente, le desea la muerte a todos los demás. ¿Quién?",
+            "Nos despertamos en una isla desierta sin ningún tipo de alimento. ¿Quién propone que nos comamos a uno de nosotros?",
+            "Uno de nosotros no entiende la gracia de este juego, pero se ríe de compromiso para no quedar como el ojete. ¿Quién?",
+            "Estamos todos en cuarentena contagiados con un virus mortal e intratable. ¿Quién se escapa y genera una epidemia?",
+            "A todos nos da miedo subirnos al auto cuando maneja...",
+            "Escalando el monte Everest, nos topamos con el yeti. Para nuestro asombro, es increíblemente parecido a...",
+            "Necesitamos a alguien para comandar a nuestras tropas. Por favor, que no sea...",
+            "Fuimos apóstoles. ¿Quién fue Judas?",
+            "Nos ofrecen darnos mil dólares por cada cucharada de mierda que comamos. ¿Quién está dispuesto a hacerse rico?",
+            "Somos estrellas de rock. ¿Quién es el primero en morir de sobredosis?",
+            "¿Quién se cagó?",
+            "Estamos en un avión sin control y quedan paracaídas para todos excepto uno. ¿Quién es el primero en agarrar un paracaídas y salvarse?",
+            "Somos miembros de una banda de forajidos buscados en el Lejano Oeste. ¿La cabeza de quién vale menos?",
+            "Somos la nueva camada de oficiales de policía. ¿Quién es el primer caso de gatillo fácil?"
+        ];
+
+        const questionsPink = [
+            "¿Quién de nosotros tendría sexo con un animal?",
+            "¿Quién de nosotros se masturbó más veces el año pasado?",
+            "¿En el historial porno de quién encontraríamos las cosas más raras?",
+            "¿Con quién de nosotros JAMÁS participarías en un trío?",
+            "Uno de ustedes quiere garchar conmigo. ¿Quién?",
+            "Uno de nosotros es MUY irresponsable a la hora de cuidarse durante el sexo. ¿Quién?",
+            "Uno de nosotros tuvo gonorrea, clamidia y sífilis. ¿Quién?",
+            "De ahora en más, siempre que tengas un orgasmo, vas a ver la cara de uno de nosotros. Ojalá que no sea la de...",
+            "¿Quién de nosotros JAMÁS participaría en una orgía?",
+            "Uno de nosotros lo exita la idea de acostarse con personas casadas. ¿A quién?",
+            "Uno de nosotros se masturba pensando en el/la presidente. ¿Quién?",
+            "Ya es posible la clonación humana. ¿Quién se clona para poder coger consigo mismo?",
+            "Los genitales de uno de nosotros son el molde de juguetes sexuales. ¿Los de quién?",
+            "¿Quién es el más egoísta en la cama?",
+            "¿A quién le encantaría organizar una orgía entre nosotros ahora mismo?",
+            "¿A quién le da asquito hacer sexo oral?",
+            "Uno de nosotros es, secretamente, una estrella porno conocida como 'Beso Negro' Jones. ¿Quién?",
+            "Uno de nosotros fue virgen por mucho más tiempo del que reconoce. ¿Quién?",
+            "Uno de nosotros se masturba mirando a su pareja con otras personas. ¿Quién?",
+            "¿A quién le daría menos culpa acostarse con la expareja de un amigo?"
+        ];
+
+        let currentMode = 'black'; // 'black' o 'pink'
+        let currentDeck = [...questionsBlack];
+        let isFlipped = false; // El estado visual: false = viendo el dorso, true = viendo la pregunta
+
+        const card = document.getElementById('card');
+        const questionEl = document.getElementById('question');
+
+        // Función para cambiar de modo (Normal / Picante)
+        function toggleMode() {
+            const body = document.body;
+            body.classList.toggle('pink-mode');
+            
+            if (currentMode === 'black') {
+                currentMode = 'pink';
+                // Mezclar ambas barajas para el modo picante
+                currentDeck = [...questionsBlack, ...questionsPink];
+            } else {
+                currentMode = 'black';
+                currentDeck = [...questionsBlack];
+            }
+            // Resetear la carta
+            if(isFlipped) flipCard();
+        }
+
+        // Función de animación de vuelta
+        function flipCard() {
+            isFlipped = !isFlipped;
+            if(isFlipped) {
+                card.classList.add('is-flipped');
+            } else {
+                card.classList.remove('is-flipped');
+            }
+        }
+
+        function drawCard() {
+            // 1. Si la carta ya está mostrando una pregunta, primero la volteamos para "esconderla"
+            //    y luego sacamos la nueva.
+            if (isFlipped) {
+                flipCard(); // Voltear a dorso
+                setTimeout(() => {
+                    updateTextAndShow();
+                }, 600); // Esperar a que termine la animación de volteo
+            } else {
+                // Si ya está mostrando el dorso, simplemente actualizamos y mostramos
+                updateTextAndShow();
+            }
+        }
+
+        function updateTextAndShow() {
+            if (currentDeck.length === 0) {
+                // Recargar mazo si se acaba
+                if(currentMode === 'black') currentDeck = [...questionsBlack];
+                else currentDeck = [...questionsBlack, ...questionsPink];
+                alert("¡Se acabaron las cartas! Mezclando de nuevo...");
+            }
+
+            // Elegir carta al azar
+            const randomIndex = Math.floor(Math.random() * currentDeck.length);
+            const text = currentDeck[randomIndex];
+            
+            // Eliminar del mazo para no repetir inmediatamente
+            currentDeck.splice(randomIndex, 1);
+
+            // Actualizar texto
+            questionEl.innerText = text;
+
+            // Voltear para mostrar la pregunta
+            flipCard();
+        }
+    </script>
+</body>
+</html>
